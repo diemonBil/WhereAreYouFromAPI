@@ -14,21 +14,21 @@ class NameStatsView(APIView):
         if not name_value:
             return Response({"error": "Query parameter 'name' is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Create or retrieve the Name object
-        name_obj, created = Name.objects.get_or_create(value=name_value)
-
-        # Increment request counter and update access time
-        name_obj.count_of_requests += 1
-        name_obj.save(update_fields=["count_of_requests", "last_accessed"])
-
-        # Return cached result if accessed within last 24 hours
-        if not created and name_obj.last_accessed >= now() - timedelta(days=1):
-            stats = NameCountryStat.objects.filter(name=name_obj)
-            serialized = CompactCountryStatSerializer(stats, many=True)
-            return Response({
-                "name": name_obj.value,
-                "countries": serialized.data
-            })
+        # Check if name already exists in DB
+        try:
+            name_obj = Name.objects.get(value=name_value)
+            # If cached and fresh → use it
+            if name_obj.last_accessed >= now() - timedelta(days=1):
+                name_obj.count_of_requests += 1
+                name_obj.save(update_fields=["count_of_requests", "last_accessed"])
+                stats = NameCountryStat.objects.filter(name=name_obj)
+                serialized = CompactCountryStatSerializer(stats, many=True)
+                return Response({
+                    "name": name_obj.value,
+                    "countries": serialized.data
+                })
+        except Name.DoesNotExist:
+            name_obj = None  # Mark as missing
 
         # Fetch prediction data from Nationalize.io
         response = requests.get(f"https://api.nationalize.io/?name={name_value}")
@@ -39,6 +39,13 @@ class NameStatsView(APIView):
                 {"error": f"No countries found for name '{name_value}'."},
                 status=status.HTTP_404_NOT_FOUND
             )
+
+        # Create or retrieve the Name object
+        name_obj, created = Name.objects.get_or_create(value=name_value)
+
+        # Increment request counter and update access time
+        name_obj.count_of_requests += 1
+        name_obj.save(update_fields=["count_of_requests", "last_accessed"])
 
         for country_info in data["country"]:
             country_code = country_info["country_id"]
@@ -75,12 +82,9 @@ class NameStatsView(APIView):
                 # Always store borders in sorted order to prevent duplicate A–B and B–A records
                 from_country, to_country = sorted([country, neighbor], key=lambda c: c.code)
 
-                # Save bidirectional border relation
-                CountryBorder.objects.update_or_create(
-                    from_country=from_country,
-                    to_country=to_country,
-                    defaults={}
-                )
+                # Store borders only if they don't already exist (symmetrically)
+                if not CountryBorder.objects.filter(from_country=from_country, to_country=to_country).exists():
+                    CountryBorder.objects.create(from_country=from_country, to_country=to_country)
 
         # Return freshly collected name–country probabilities
         stats = NameCountryStat.objects.filter(name=name_obj)
