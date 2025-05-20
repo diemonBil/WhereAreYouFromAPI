@@ -9,7 +9,8 @@ class Name(models.Model):
 
 
 class Country(models.Model):
-    code = models.CharField(max_length=3, unique=True)  # Example: "US"
+    code = models.CharField(max_length=2, unique=True)  # Example: "US"
+    alpha3 = models.CharField(max_length=3, blank=True)
     name = models.CharField(max_length=100)             # Example: "United States"
     official_name = models.CharField(max_length=150, blank=True, null=True)
     region = models.CharField(max_length=100, blank=True, null=True)           # Example: "Americas"
