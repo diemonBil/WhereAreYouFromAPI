@@ -30,7 +30,7 @@ class Country(models.Model):
     openstreetmap_url = models.URLField(blank=True, null=True)
     flag_png = models.URLField(blank=True, null=True)
     flag_svg = models.URLField(blank=True, null=True)
-    flag_alt = models.CharField(max_length=255, blank=True, null=True)
+    flag_alt = models.TextField(blank=True, null=True)
     coat_of_arms_png = models.URLField(blank=True, null=True)
     coat_of_arms_svg = models.URLField(blank=True, null=True)
 
