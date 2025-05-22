@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+env/
+venv/
+.venv/
+
+# IDE / Editor settings
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Byte-compiled / cache / build
+*.egg-info/
+*.eggs/
+build/
+dist/
+
+# Environment variables
+.env
+.env.*
+
+# SQLite (якщо не використовуєш)
+*.sqlite3
+
+# Docker build cache
+*.tar
+*.log
+
+# Migrations (опціонально, якщо генеруються автоматично)
+**/migrations/__pycache__/
+**/migrations/*.pyc
