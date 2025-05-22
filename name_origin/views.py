@@ -7,13 +7,14 @@ from .models import Name, Country, NameCountryStat, CountryBorder
 from .serializers import CompactCountryStatSerializer
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
 
+
 class NameStatsView(APIView):
     @extend_schema(
         summary="Get country probabilities for a given name",
         description=(
-                "Returns a list of countries associated with the given name and their probabilities. "
-                "If the name exists in the local database and was updated in the last 24 hours, it returns cached data. "
-                "Otherwise, it fetches data from Nationalize.io and stores it locally."
+            "Returns a list of countries associated with the given name and their probabilities. "
+            "If the name exists in the local database and was updated in the last 24 hours, it returns cached data. "
+            "Otherwise, it fetches data from Nationalize.io and stores it locally."
         ),
         parameters=[
             OpenApiParameter(
@@ -25,10 +26,14 @@ class NameStatsView(APIView):
             ),
         ],
         responses={
-            200: OpenApiResponse(description="Successful response with list of countries and probabilities."),
+            200: OpenApiResponse(
+                description="Successful response with list of countries and probabilities."
+            ),
             400: OpenApiResponse(description="Missing 'name' query parameter."),
-            404: OpenApiResponse(description="No country data found for the given name."),
-        }
+            404: OpenApiResponse(
+                description="No country data found for the given name."
+            ),
+        },
     )
     def get(self, request):
         name_value = request.query_params.get("name")
@@ -154,8 +159,8 @@ class PopularNamesView(APIView):
     @extend_schema(
         summary="Get top 5 names associated with a country",
         description=(
-                "Returns the top 5 names with the highest probability for a given country code (e.g. 'US', 'UA').\n"
-                "Each result includes the name, probability, and number of requests for that name."
+            "Returns the top 5 names with the highest probability for a given country code (e.g. 'US', 'UA').\n"
+            "Each result includes the name, probability, and number of requests for that name."
         ),
         parameters=[
             OpenApiParameter(
@@ -170,7 +175,7 @@ class PopularNamesView(APIView):
             200: OpenApiResponse(description="Successful response with top names."),
             400: OpenApiResponse(description="Missing or invalid 'country' parameter."),
             404: OpenApiResponse(description="No data found for the given country."),
-        }
+        },
     )
     def get(self, request):
         country_code = request.query_params.get("country")
@@ -190,10 +195,9 @@ class PopularNamesView(APIView):
 
         # Aggregate top 5 most frequent names associated with this country
         stats = (
-            NameCountryStat.objects
-            .filter(country=country)
-            .select_related('name')
-            .order_by('-probability')[:5]
+            NameCountryStat.objects.filter(country=country)
+            .select_related("name")
+            .order_by("-probability")[:5]
         )
 
         if not stats:
@@ -202,14 +206,16 @@ class PopularNamesView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        return Response({
-            "country": country.code,
-            "top_names": [
-                {
-                    "name": stat.name.value,
-                    "probability": round(stat.probability, 4),
-                    "count_of_requests": stat.name.count_of_requests
-                }
-                for stat in stats
-            ]
-        })
+        return Response(
+            {
+                "country": country.code,
+                "top_names": [
+                    {
+                        "name": stat.name.value,
+                        "probability": round(stat.probability, 4),
+                        "count_of_requests": stat.name.count_of_requests,
+                    }
+                    for stat in stats
+                ],
+            }
+        )
